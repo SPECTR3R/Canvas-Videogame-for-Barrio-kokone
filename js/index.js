@@ -99,7 +99,6 @@ class Covid {
       if (virus.y > canvas.height) {
         arr.shift();
         this.score++;
-        console.log(this.score);
       }
       this.level = this.score > 30 ? 2.5 : this.score > 15 ? 2 : 1;
       virus.y += this.level;
@@ -133,6 +132,21 @@ class Irving {
   drawMigue() {
     ctx.drawImage(this.imgMigue, this.migue.x, this.migue.y, this.migue.width, this.migue.height);
   }
+
+  moveIrvingMouse(mouseX, mouseY) {
+    let dx = (mouseX - this.x) * 0.125;
+    let dy = (mouseY - this.y) * 0.125;
+    //calculate the distance this would move ...
+    var distance = Math.sqrt(dx * dx + dy * dy);
+    //... and cap it at 5px
+    if (distance > 5) {
+      dx *= 5 / distance;
+      dy;
+    }
+    this.x += dx;
+    this.y += dy;
+  }
+
   moveIrving(keys) {
     // Arrow up -> [38]
     if (keys[38]) {
@@ -186,38 +200,75 @@ const covid = new Covid();
 const irving = new Irving();
 let crashFlag = false;
 
+// helper functions
+function getMousePos(canvasDom, mouseEvent) {
+  var rect = canvasDom.getBoundingClientRect();
+  return {
+    x: mouseEvent.clientX - rect.left,
+    y: mouseEvent.clientY - rect.top,
+  };
+}
+// helper variables
+let moving = false;
+let mousePos = { x: canvas.width / 2, y: canvas.height };
+let lastPos = mousePos;
+let keys = [];
+
 // listeners
-canvas.addEventListener('mousedown', function (clientX) {
-  let rect = canvas.getBoundingClientRect();
-  clickCoordinates = [Math.floor(event.clientX - rect.left), Math.floor(event.clientY - rect.top)];
-  console.log(clickCoordinates);
-  // Button start
-  if (
-    clickCoordinates[0] > 150 &&
-    clickCoordinates[0] < 340 &&
-    clickCoordinates[1] > 540 &&
-    clickCoordinates[1] < 610
-  ) {
-    switch (board.state) {
-      case 'load':
-        board.state = 'instructions1';
-        break;
-      case 'instructions1':
-        board.state = 'instructions2';
-        break;
-      case 'instructions2':
-        board.state = 'road';
-        break;
-      case 'gameOver':
-        window.location.reload();
-        break;
-      case 'gameWin':
-        window.location.reload();
-        break;
+canvas.addEventListener('mousedown', function (event) {
+  // Buttons
+  if (board.state !== 'road') {
+    let rect = canvas.getBoundingClientRect();
+    clickCoordinates = [
+      Math.floor(event.clientX - rect.left),
+      Math.floor(event.clientY - rect.top),
+    ];
+    if (
+      clickCoordinates[0] > 150 &&
+      clickCoordinates[0] < 340 &&
+      clickCoordinates[1] > 540 &&
+      clickCoordinates[1] < 610
+    ) {
+      switch (board.state) {
+        case 'load':
+          board.state = 'instructions1';
+          break;
+        case 'instructions1':
+          board.state = 'instructions2';
+          break;
+        case 'instructions2':
+          board.state = 'road';
+          break;
+        case 'gameOver':
+          window.location.reload();
+          break;
+        case 'gameWin':
+          window.location.reload();
+          break;
+      }
     }
   }
+  moving = true;
 });
-let keys = [];
+
+canvas.addEventListener('mouseup', function (event) {
+  moving = false;
+});
+
+let mouseX = irving.x;
+let mouseY = irving.y;
+
+canvas.addEventListener(
+  'mousemove',
+  function (event) {
+    if (moving) {
+      let rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+    }
+  },
+  false
+);
 
 document.body.addEventListener('keydown', e => {
   keys[e.keyCode] = true;
@@ -238,6 +289,8 @@ const updategame = () => {
     covid.frames++;
     irving.draw();
     irving.moveIrving(keys);
+    irving.moveIrvingMouse(mouseX, mouseY);
+
     //check collide
     covid.viruses.forEach(virus => {
       if (irving.crash(virus)) {

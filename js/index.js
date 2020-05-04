@@ -270,6 +270,31 @@ canvas.addEventListener(
   false
 );
 
+
+
+canvas.addEventListener(
+  'pointerdown',
+  function (event) {
+      let rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+
+  },
+  false
+);
+canvas.addEventListener(
+  'pointermove',
+  function (event) {
+      let rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+  },
+  false
+);
+
+
+
+
 document.body.addEventListener('keydown', e => {
   keys[e.keyCode] = true;
 });
@@ -280,6 +305,13 @@ document.body.addEventListener('keyup', e => {
 
 // Start game
 window.onload = () => {
+
+  let goFS = document.getElementById("goFS");
+  goFS.addEventListener("click", function() {
+      document.body.requestFullscreen();
+      goFS.style="display: none;"
+  }, false);
+
   setTimeout((board.interval = setInterval(updategame, 1000 / 60)), 3000);
 };
 const updategame = () => {
@@ -290,7 +322,6 @@ const updategame = () => {
     irving.draw();
     irving.moveIrving(keys);
     irving.moveIrvingMouse(mouseX, mouseY);
-
     //check collide
     covid.viruses.forEach(virus => {
       if (irving.crash(virus)) {

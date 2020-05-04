@@ -270,45 +270,64 @@ canvas.addEventListener(
   false
 );
 
-
-
 // Set up touch events for mobile, etc
-canvas.addEventListener("touchstart", function (e) {
-  mousePos = getTouchPos(canvas, e);
-var touch = e.touches[0];
-var mouseEvent = new MouseEvent("mousedown", {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-canvas.dispatchEvent(mouseEvent);
-}, false);
-canvas.addEventListener("touchend", function (e) {
-var mouseEvent = new MouseEvent("mouseup", {});
-canvas.dispatchEvent(mouseEvent);
-}, false);
-canvas.addEventListener("touchmove", function (e) {
-var touch = e.touches[0];
-var mouseEvent = new MouseEvent("mousemove", {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-canvas.dispatchEvent(mouseEvent);
-}, false);
+canvas.addEventListener(
+  'touchstart',
+  function (e) {
+    mousePos = getTouchPos(canvas, e);
+    var touch = e.touches[0];
+    var mouseEvent = new MouseEvent('mousedown', {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    canvas.dispatchEvent(mouseEvent);
+  },
+  false
+);
+canvas.addEventListener(
+  'touchend',
+  function (e) {
+    var mouseEvent = new MouseEvent('mouseup', {});
+    canvas.dispatchEvent(mouseEvent);
+  },
+  false
+);
+canvas.addEventListener(
+  'touchmove',
+  function (e) {
+    var touch = e.touches[0];
+    var mouseEvent = new MouseEvent('mousemove', {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    canvas.dispatchEvent(mouseEvent);
+  },
+  false
+);
 
 // Get the position of a touch relative to the canvas
 function getTouchPos(canvasDom, touchEvent) {
-var rect = canvasDom.getBoundingClientRect();
-return {
-x: touchEvent.touches[0].clientX - rect.left,
-y: touchEvent.touches[0].clientY - rect.top
-};
+  var rect = canvasDom.getBoundingClientRect();
+  return {
+    x: touchEvent.touches[0].clientX - rect.left,
+    y: touchEvent.touches[0].clientY - rect.top,
+  };
 }
 
-
-
-
-
-
+function openFullscreen() {
+  if (document.body.requestFullscreen) {
+    document.body.requestFullscreen();
+  } else if (document.body.mozRequestFullScreen) {
+    /* Firefox */
+    document.body.mozRequestFullScreen();
+  } else if (document.body.webkitRequestFullscreen) {
+    /* Chrome, Safari and Opera */
+    document.body.webkitRequestFullscreen();
+  } else if (document.body.msRequestFullscreen) {
+    /* IE/Edge */
+    document.body.msRequestFullscreen();
+  }
+}
 
 document.body.addEventListener('keydown', e => {
   keys[e.keyCode] = true;
@@ -320,12 +339,15 @@ document.body.addEventListener('keyup', e => {
 
 // Start game
 window.onload = () => {
-
-  let goFS = document.getElementById("goFS");
-  goFS.addEventListener("click", function() {
-      document.body.requestFullscreen();
-      goFS.style="display: none;"
-  }, false);
+  let goFS = document.getElementById('goFS');
+  goFS.addEventListener(
+    'click',
+    function () {
+      openFullscreen();
+      goFS.style = 'display: none;';
+    },
+    false
+  );
 
   setTimeout((board.interval = setInterval(updategame, 1000 / 60)), 3000);
 };

@@ -12,36 +12,27 @@ class Board {
     this.state = 'load';
     this.interval = undefined;
     this.speed = 1;
-
     // Images
     this.imgSrtart = new Image();
     this.imgSrtart.src = ' ./images/startScreenBG.svg';
-
     this.imgInstructions1 = new Image();
     this.imgInstructions1.src = ' ./images/instructions1.svg';
-
     this.imgInstructions2 = new Image();
     this.imgInstructions2.src = ' ./images/instructions2.svg';
-
     this.imgRoad = new Image();
     this.imgRoad.src = './images/road.png';
-
     this.imgGameOver = new Image();
     this.imgGameOver.src = './images/gameOver.svg';
-
     this.imgGameWin = new Image();
     this.imgGameWin.src = './images/gameWin.svg';
-
     // Inmediately load start screen
     this.imgSrtart.onload = () => {
-      this.state = 'road';
+      this.state = 'load';
     };
   }
-
   clean() {
     ctx.clearRect(0, 0, this.width, this.height);
   }
-
   drawBg() {
     switch (this.state) {
       case 'instructions1':
@@ -70,7 +61,6 @@ class Board {
         break;
     }
   }
-
   animateRoad() {
     this.y += this.speed;
     if (this.y > this.height) this.y = 0;
@@ -95,7 +85,7 @@ class Covid {
   }
   drawCovid() {
     //create covid
-    if (this.frames > this.randomNumber(100, 300)) {
+    if (this.frames > this.randomNumber(100, 300) && this.score < 40) {
       this.viruses.push({
         width: this.width,
         height: this.height,
@@ -111,7 +101,7 @@ class Covid {
         this.score++;
         console.log(this.score);
       }
-      this.level = this.score > 60 ? 3 : this.score > 30 ? 2 : 1;
+      this.level = this.score > 30 ? 2.5 : this.score > 15 ? 2 : 1;
       virus.y += this.level;
       ctx.fillStyle = '#ffffff';
       ctx.font = '20px arial';
@@ -133,9 +123,15 @@ class Irving {
     this.velY = 0;
     this.imgIrving = new Image();
     this.imgIrving.src = './images/player.png';
+    this.imgMigue = new Image();
+    this.imgMigue.src = './images/miguelon.png';
+    this.migue = { x: 140, y: 20, height: 90, width: 90 };
   }
   draw() {
     ctx.drawImage(this.imgIrving, this.x, this.y, this.width, this.height);
+  }
+  drawMigue() {
+    ctx.drawImage(this.imgMigue, this.migue.x, this.migue.y, this.migue.width, this.migue.height);
   }
   moveIrving(keys) {
     // Arrow up -> [38]
@@ -188,6 +184,7 @@ class Irving {
 const board = new Board();
 const covid = new Covid();
 const irving = new Irving();
+let crashFlag = false;
 
 // listeners
 canvas.addEventListener('mousedown', function (clientX) {
@@ -212,10 +209,10 @@ canvas.addEventListener('mousedown', function (clientX) {
         board.state = 'road';
         break;
       case 'gameOver':
-        board.state = 'load';
+        window.location.reload();
         break;
       case 'gameWin':
-        board.state = 'load';
+        window.location.reload();
         break;
     }
   }
@@ -230,14 +227,31 @@ document.body.addEventListener('keyup', e => {
   keys[e.keyCode] = false;
 });
 
-// Inicia Juego
+// Start game
 window.onload = () => {
   setTimeout((board.interval = setInterval(updategame, 1000 / 60)), 3000);
 };
 const updategame = () => {
   board.drawBg();
-  covid.drawCovid();
-  covid.frames++;
-  irving.draw();
-  irving.moveIrving(keys);
+  if (board.state === 'road') {
+    covid.drawCovid();
+    covid.frames++;
+    irving.draw();
+    irving.moveIrving(keys);
+    //check collide
+    covid.viruses.forEach(virus => {
+      if (irving.crash(virus)) {
+        board.state = 'gameOver';
+        board.drawBg();
+      }
+    });
+
+    if (covid.score > 40) {
+      irving.drawMigue();
+      if (irving.crash(irving.migue)) {
+        board.state = 'gameWin';
+        board.drawBg();
+      }
+    }
+  }
 };

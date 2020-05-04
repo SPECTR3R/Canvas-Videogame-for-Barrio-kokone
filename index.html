@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link rel="stylesheet" href="styles/style.css" />
-    <title> Salvando a Miguelón </title>
+    <title>Salvando a Miguelón</title>
   </head>
   <body>
-    <canvas width="360" height="640"></canvas>
+    <canvas
+      width="360"
+      height="640"
+      onmousemove="getPos(event)"
+      onmouseout="stopTracking()"
+    ></canvas>
     <script type="text/javascript" src="./js/index.js"></script>
   </body>
 </html>

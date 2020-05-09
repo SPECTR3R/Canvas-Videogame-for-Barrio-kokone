@@ -1,6 +1,21 @@
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
+window.onload = () => {
+  canvas.style = 'display: none;';
+  const goFS = document.getElementById('goFS');
+  goFS.addEventListener(
+    'click',
+    () => {
+      openFullscreen();
+      goFS.style = 'display: none;';
+      canvas.style = 'display: block;';
+      setTimeout((board.interval = setInterval(updategame, 1000 / 60)), 3000);
+    },
+    false
+  );
+};
+
 class Board {
   constructor() {
     // Dimension properties
@@ -136,48 +151,17 @@ class Irving {
   moveIrvingMouse(mouseX, mouseY) {
     let dx = (mouseX - this.x) * 0.125;
     let dy = (mouseY - this.y) * 0.125;
-    //calculate the distance this would move ...
+    //calculate the distance
     var distance = Math.sqrt(dx * dx + dy * dy);
-    //... and cap it at 5px
+    //... and cap it at 5px, so it feels smooth
     if (distance > 5) {
       dx *= 5 / distance;
       dy;
     }
+    //now move
     this.x += dx;
     this.y += dy;
-  }
-
-  moveIrving(keys) {
-    // Arrow up -> [38]
-    if (keys[38]) {
-      if (this.velY > -this.speed) {
-        this.velY--;
-      }
-    }
-    // Arrow down -> [40]
-    if (keys[40]) {
-      if (this.velY < this.speed) {
-        this.velY++;
-      }
-    }
-    // Arrow right -> [39]
-    if (keys[39]) {
-      if (this.velX < this.speed) {
-        this.velX++;
-      }
-    }
-    // Arrow left -> [37]
-    if (keys[37]) {
-      if (this.velX > -this.speed) {
-        this.velX--;
-      }
-    }
-    //movement
-    this.x += this.velX;
-    this.velX *= this.friction;
-    this.y += this.velY;
-    this.velY *= this.friction;
-    //boundaries
+    //set boundaries
     if (this.y < 0) this.y = 0;
     if (this.y > canvas.height - this.height) this.y = canvas.height - this.height;
     if (this.x > 315 - this.width) this.x = 315 - this.width;
@@ -186,10 +170,10 @@ class Irving {
 
   crash(obstacle) {
     return (
-      obstacle.x < this.x + this.width &&
-      obstacle.x + obstacle.width > this.x &&
-      obstacle.y < this.y + this.height &&
-      obstacle.height + obstacle.y > this.y
+      obstacle.x < this.x + this.width - 10 &&
+      obstacle.x + obstacle.width - 10 > this.x &&
+      obstacle.y < this.y + this.height - 10 &&
+      obstacle.height + obstacle.y - 10 > this.y
     );
   }
 }
@@ -198,31 +182,57 @@ class Irving {
 const board = new Board();
 const covid = new Covid();
 const irving = new Irving();
-let crashFlag = false;
 
-// helper functions
-function getMousePos(canvasDom, mouseEvent) {
-  var rect = canvasDom.getBoundingClientRect();
-  return {
-    x: mouseEvent.clientX - rect.left,
-    y: mouseEvent.clientY - rect.top,
-  };
-}
 // helper variables
+let crashFlag = false;
 let moving = false;
 let mousePos = { x: canvas.width / 2, y: canvas.height };
 let lastPos = mousePos;
 let keys = [];
+let mouseX = irving.x;
+let mouseY = irving.y;
 
-// listeners
-canvas.addEventListener('mousedown', function (event) {
+// helper functions
+const getTouchPos = (canvasDom, touchEvent) => {
+  var rect = canvasDom.getBoundingClientRect();
+  return {
+    x: touchEvent.touches[0].clientX - rect.left,
+    y: touchEvent.touches[0].clientY - rect.top,
+  };
+};
+
+function openFullscreen (){
+  if (document.body.requestFullscreen) {
+    document.body.requestFullscreen();
+  } else if (document.body.mozRequestFullScreen) {
+    /* Firefox */
+    document.body.mozRequestFullScreen();
+  } else if (document.body.webkitRequestFullscreen) {
+    /* Chrome, Safari and Opera */
+    document.body.webkitRequestFullscreen();
+  } else if (document.body.msRequestFullscreen) {
+    /* IE/Edge */
+    document.body.msRequestFullscreen();
+  }
+};
+
+// mouse listeners
+canvas.addEventListener('mouseup', e => (moving = false));
+
+canvas.addEventListener('mousemove', e => {
+  if (moving) {
+    let rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  }
+});
+
+canvas.addEventListener('mousedown', e => {
   // Buttons
   if (board.state !== 'road') {
     let rect = canvas.getBoundingClientRect();
-    clickCoordinates = [
-      Math.floor(event.clientX - rect.left),
-      Math.floor(event.clientY - rect.top),
-    ];
+    clickCoordinates = [Math.floor(e.clientX - rect.left), Math.floor(e.clientY - rect.top)];
+    console.log(clickCoordinates);
     if (
       clickCoordinates[0] > 150 &&
       clickCoordinates[0] < 340 &&
@@ -232,9 +242,6 @@ canvas.addEventListener('mousedown', function (event) {
       switch (board.state) {
         case 'load':
           board.state = 'instructions1';
-          break;
-        case 'instructions1':
-          board.state = 'instructions2';
           break;
         case 'instructions2':
           board.state = 'road';
@@ -248,125 +255,59 @@ canvas.addEventListener('mousedown', function (event) {
       }
     }
   }
+
+  if (
+    clickCoordinates[0] > 150 &&
+    clickCoordinates[0] < 340 &&
+    clickCoordinates[1] > 55 &&
+    clickCoordinates[1] < 130 &&
+    board.state === 'instructions1'
+  ) {
+    board.state = 'instructions2';
+  }
+
   moving = true;
 });
 
-canvas.addEventListener('mouseup', function (event) {
-  moving = false;
+// Set up touch events as mouse events for mobile
+canvas.addEventListener('touchstart', e => {
+  mousePos = getTouchPos(canvas, e);
+  var touch = e.touches[0];
+  var mouseEvent = new MouseEvent('mousedown', {
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+  });
+  canvas.dispatchEvent(mouseEvent);
 });
 
-let mouseX = irving.x;
-let mouseY = irving.y;
-
-canvas.addEventListener(
-  'mousemove',
-  function (event) {
-    if (moving) {
-      let rect = canvas.getBoundingClientRect();
-      mouseX = event.clientX - rect.left;
-      mouseY = event.clientY - rect.top;
-    }
-  },
-  false
-);
-
-// Set up touch events for mobile, etc
-canvas.addEventListener(
-  'touchstart',
-  function (e) {
-    mousePos = getTouchPos(canvas, e);
-    var touch = e.touches[0];
-    var mouseEvent = new MouseEvent('mousedown', {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-    });
-    canvas.dispatchEvent(mouseEvent);
-  },
-  false
-);
-canvas.addEventListener(
-  'touchend',
-  function (e) {
-    var mouseEvent = new MouseEvent('mouseup', {});
-    canvas.dispatchEvent(mouseEvent);
-  },
-  false
-);
-canvas.addEventListener(
-  'touchmove',
-  function (e) {
-    var touch = e.touches[0];
-    var mouseEvent = new MouseEvent('mousemove', {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-    });
-    canvas.dispatchEvent(mouseEvent);
-  },
-  false
-);
-
-// Get the position of a touch relative to the canvas
-function getTouchPos(canvasDom, touchEvent) {
-  var rect = canvasDom.getBoundingClientRect();
-  return {
-    x: touchEvent.touches[0].clientX - rect.left,
-    y: touchEvent.touches[0].clientY - rect.top,
-  };
-}
-
-function openFullscreen() {
-  if (document.body.requestFullscreen) {
-    document.body.requestFullscreen();
-  } else if (document.body.mozRequestFullScreen) {
-    /* Firefox */
-    document.body.mozRequestFullScreen();
-  } else if (document.body.webkitRequestFullscreen) {
-    /* Chrome, Safari and Opera */
-    document.body.webkitRequestFullscreen();
-  } else if (document.body.msRequestFullscreen) {
-    /* IE/Edge */
-    document.body.msRequestFullscreen();
-  }
-}
-
-document.body.addEventListener('keydown', e => {
-  keys[e.keyCode] = true;
+canvas.addEventListener('touchend', e => {
+  var mouseEvent = new MouseEvent('mouseup', {});
+  canvas.dispatchEvent(mouseEvent);
 });
-
-document.body.addEventListener('keyup', e => {
-  keys[e.keyCode] = false;
+canvas.addEventListener('touchmove', e => {
+  var touch = e.touches[0];
+  var mouseEvent = new MouseEvent('mousemove', {
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+  });
+  canvas.dispatchEvent(mouseEvent);
 });
 
 // Start game
-window.onload = () => {
-  let goFS = document.getElementById('goFS');
-  goFS.addEventListener(
-    'click',
-    function () {
-      openFullscreen();
-      goFS.style = 'display: none;';
-    },
-    false
-  );
-
-  setTimeout((board.interval = setInterval(updategame, 1000 / 60)), 3000);
-};
 const updategame = () => {
   board.drawBg();
   if (board.state === 'road') {
     covid.drawCovid();
     covid.frames++;
     irving.draw();
-    irving.moveIrving(keys);
     irving.moveIrvingMouse(mouseX, mouseY);
-    //check collide
+    //check collision
     covid.viruses.forEach(virus => {
       if (irving.crash(virus)) {
         board.state = 'gameOver';
         board.drawBg();
       }
     });
-
     if (covid.score > 40) {
       irving.drawMigue();
       if (irving.crash(irving.migue)) {
